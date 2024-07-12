@@ -1,0 +1,80 @@
+---
+title: "analysis"
+---
+
+We first load packages.
+
+```{r}
+#| output: false
+library(babynames)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(pheatmap)
+```
+
+The first ten lines of babynames are provided in @tbl-babynames
+```{r}
+#| label: tbl-babynames
+#| tbl-cap : "First ten babynames"
+head(babynames) |> kable()
+```
+
+Two functions have been created (click on 'Code' link below to view):
+
+- get_most_frequent: to get the most frequent babynames over a time-period (by default from 1950).
+- plot_top functions : from the output of get_most_frequent, plot the top n (by default 10) most popular names.
+
+
+```{r}
+#| code-fold: true
+get_most_frequent <- function(babynames, select_sex, from = 1950) {
+  most_freq <- babynames |>
+    filter(sex == select_sex, year > from) |>
+    group_by(name) |>
+    summarise(average = mean(prop)) |>
+    arrange(desc(average))
+    
+  return(list(
+    babynames = babynames,
+    most_frequent = most_freq,
+    sex = select_sex,
+    from = from))
+}
+
+plot_top <- function(x, top = 10) {
+  topx <- x$most_frequent$name[1:top]
+  
+  p <- x$babynames |>
+    filter(name %in% topx, sex == x$sex, year > x$from) |>
+    ggplot(aes(x = year, y = prop, color = name)) +
+    geom_line() +
+    scale_color_brewer(palette = "Paired") +
+    theme_classic()
+  
+  return(p)
+}
+```
+
+We use the above functions to visualize the 10 most frequent girl and boy names from 1950 :
+
+```{r}
+#| label: fig-line-girls
+#| fig-cap: "Proportion of 10 most frequent girl names by year"
+get_most_frequent(babynames, select_sex = "F") |>
+ plot_top()
+```
+
+
+
+```{r}
+#| label: fig-line-boys
+#| fig-cap: "Proportion of 10 most frequent boy names by year"
+get_most_frequent(babynames, select_sex = "M") |>
+  plot_top()
+```
+
+@fig-line-girls displays girl names : we can see a peak for Lisa, Jennifer and Jessica between 1960 and 2000.
+
+@fig-line-boys displays boy names : we can see a decrease of most frequent names after 2000.
